@@ -12,10 +12,10 @@ title: |
         | Subtítulo
         | Subtítulo
 author:
-- name: Tali tali tali
+- name: Wanda Lisselote Binet y Ramon Correa
   affiliation: Estudiante, Universidad Autónoma de Santo Domingo (UASD)
 abstract: "Mi resumen"
-keywords: "palabra clave 1, palabra clave 2"
+keywords: "Dificultad Caminar, dificultad escalones
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 geometry: margin=1in
 fontfamily: mathpazo
@@ -33,26 +33,228 @@ header-includes:
 
 # Introducción
 
-Preguntas de investigación o tema abordado.
+#Tomando en cuenta los datos del Censo Nacional de poblacion y vivienda del 2010, poder se puede definir cual es la distribución espacial de las personas que tienene dificultad para caminar o subir escalones. 
 
 # Metodología
 
-\ldots
+
 
 # Resultados
 
-\ldots
+
 
 # Discusión o Conclusiones
 
-\ldots
+
 
 # Información de soporte
 
-\ldots
+#Se utiliza como información de soporte las bases de datos suministradas por el profesor Martinez Batlle que está localizada en el directorio data:
+#- Capa de division politica de municipios del Censo Nacional de Población y Vivienda 2010, localizada en el Geopackage divisionRD.gpkg.
+#- Datos de precipitacion anual, localizados en los archivos onamet_prec_anual_sf.
+#- Base de datos estadísticos de la Oficina Nacional de Estadística, localizada en el archivo vivpersgeom_sf .RDS.
+#- Informaciones conceptuales sobre hacinamiento de los Boletines Mensuales llamados Panorama Estadístico de la ONE.  (Boletin mensual Año 1 No. 1 y Boletin mensua Año 5 No. 62)
 
 # *Script* reproducible
 
-\ldots
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  collapse=TRUE,
+  out.width='100%',
+  fig.path = "img/",
+  eval = F
+)
+```
+
+```{r}
+library(sf)
+library(sp)
+library(tidyverse)
+library(spdep)
+library(lmtest)
+library(tmap)
+library(RColorBrewer)
+library(gstat)
+```
+# Analisis exploratorio de datos espaciales
+
+```{r}
+getwd()        # Optención de la ruta de mi directorio de datos
+
+#carga en memoria del geopackage de division territorial
+st_layers('/home/lbine/material-de-apoyo/data/divisionRD.gpkg')
+muni.sf <- st_read(dsn = '/home/lbine/material-de-apoyo/data/divisionRD.gpkg', layer = 'MUNCenso2010', quiet=T)
+muni.sf
+summary(muni.sf)
+plot(muni.sf)
+
+#Carga los datos del censo 2010
+vivpersgeom_sf <- readRDS('/home/lbine/material-de-apoyo/data/vivpersgeom_sf.RDS')
+#censoxx <- vivpersgeom_sf
+censo <- vivpersgeom_sf %>% select(matches('ENLACE|TOPONIMIA|Población total|Condición de ocupación|Cantidad Cuartos tiene la vivienda|Dificultad para Caminar o subir escalones: Si'))
+
+censo <- censo %>% mutate("Cantviv"=`Condición de ocupación: Ocupada con personas presentes`+ `Condición de ocupación: Desocupada`)
+
+censo <- censo %>% mutate("CHabitacion"=`Cantidad Cuartos tiene la vivienda: 1`+(`Cantidad Cuartos tiene la vivienda: 2`*2)+(`Cantidad Cuartos tiene la vivienda: 3`*3)+(`Cantidad Cuartos tiene la vivienda: 4`*4)+(`Cantidad Cuartos tiene la vivienda: 5`*5)+(`Cantidad Cuartos tiene la vivienda: 6`*6)+(`Cantidad Cuartos tiene la vivienda: 7`*7)+(`Cantidad Cuartos tiene la vivienda: 8`*8)+(`Cantidad Cuartos tiene la vivienda: 9`*9)+(`Cantidad Cuartos tiene la vivienda: 10`*10)+(`Cantidad Cuartos tiene la vivienda: 11`*11)+(`Cantidad Cuartos tiene la vivienda: 12`*12)+(`Cantidad Cuartos tiene la vivienda: 13`*13)+(`Cantidad Cuartos tiene la vivienda: 14`*14)+(`Cantidad Cuartos tiene la vivienda: 15`*15)) %>% select(-matches('Cantidad Cuartos tiene la vivienda'))
+
+censo <- censo %>% mutate("NivHac"= `Población total`/ CHabitacion)
+
+#Suponiendo que por cada vivienda señalada hay 1 persona con dificultad para caminar o subir escalones
+censo <- censo %>% mutate("PorcPersD"= `Dificultad para Caminar o subir escalones: Si`/`Población total` * 100)
+
+censo <- censo %>% mutate("PorcPersD_log"= log(censo$PorcPersD))
+
+structure(censo)
+
+# Asegurar se trabaja con el mismo sistema de coordenadas
+censoT = st_transform(censo, crs=32619)  
+
+# Aseguro la relacion entre los archivos con el campo ENLACE y TOPONIMIA
+match(censoT$ENLACE, muni.sfT$ENLACE)
+match(censoT$TOPONIMIA, muni.sfT$TOPONIMIA)
+```
+
+## Analisis Exploratorio ESDA
+```{r}
+nrow(censoT)
+summary(censoT$`Dificultad para Caminar o subir escalones: Si`)
+Dificam <- censoT$`Dificultad para Caminar o subir escalones: Si`
+hist(Dificam)
+hist(log(Dificam))
+shapiro.test(Dificam)
+shapiro.test(log(Dificam))
+qqnorm(Dificam)
+qqnorm(log(Dificam))
+Dificam_log <- log(Dificam)
+```
+
+## Analisis de Vecindad
+```{r}
+
+# Vecindad por Contiguidad: Se crea objeto de vecindad con el criterio donde todos son vecinos
+censoT.sp <- as_Spatial(censoT)
+censoT.np <- poly2nb(censoT.sp, queen = TRUE) 
+summary(censoT.np)
+
+# Evaluación de cardinalidad
+card(censoT.np)   
+sapply(censoT.np, function(x) x)
+
+#resultado: Es simetrico
+is.symmetric.nb(censoT.np)   
+
+plot(censoT.sp, border="red", lwd=1)
+plot(censoT.np, coordinates(censoT.sp), add=T)
+
+# Vecindad por numero de vecinos: Se crea objeto de vecindad donde cada municipio tenga solo un vecino próximo
+coords <- coordinates(censoT.sp)
+ident <- row.names(censoT.sp)
+censoT.np.k1 <- knn2nb(knearneigh(coords,k=1), row.names = ident)
+censoT.np.k2 <- knn2nb(knearneigh(coords,k=2), row.names = ident)
+
+is.symmetric.nb(censoT.np.k1)
+is.symmetric.nb(censoT.np.k2)
+#resultado: En ambos casos NO es simetrico
+
+plot(censoT.sp, border="red", lwd=1)
+plot(censoT.np.k1, coordinates(censoT.sp), add=T)
+
+plot(censoT.sp, border="red", lwd=1)
+plot(censoT.np.k2, coordinates(censoT.sp), add=T)
+
+#Determinamos la distancia máxima y mínima al vecino mas proximo usando k=1
+dist <- unlist(nbdists(censoT.np.k1, coords))
+summary(dist)
+hist(dist)
+boxplot(dist)
+```
+
+```{r}
+rownames(censoT) <- censoT$TOPONIMIA
+nb <- poly2nb(censoT)
+summary(nb)
+```
+
+
+## Ponderadores espaciales (Construcción de objeto de pesos)
+
+```{r}
+
+# Estilo Weighted. Donde los pesos de las observaciones vecinas suman 1. Estandarización por fila
+censo.w.w <- nb2listw(nb)
+censo.w.w
+
+# Estilo Binario. Donde los pesos son indicativos de la relación entre dos o mas observaciones.
+censo.w.b <- nb2listw(nb, style = 'B')
+censo.w.b
+
+```
+
+## Autocorrelacion Espacial
+
+```{r}
+# Prueba de Breuch-Pagan
+coordsxy <- censoT %>%
+  st_centroid() %>% 
+     mutate (x=unlist(map(geom,1)),
+             y=unlist(map(geom,2))) %>%
+  st_drop_geometry() %>%
+  select(ENLACE, x, y)
+coordsxy
+censoT <- censoT %>% inner_join(coordsxy)
+```
+
+```{r}
+# Prueba de homocedasticidad de la variable transformada
+censoT %>% lm(Dificam_log~ x, .) %>% plot(3)
+censoT %>% lm(Dificam_log~ y, .) %>% plot(3)
+
+censoT %>% lm(Dificam_log~ x, .) %>% bptest()  #Es mas homocedastica
+censoT %>% lm(Dificam_log~ y, .) %>% bptest()
+#El indice de significancia es menor de 0.05, por tanto se rechaza la hipotesis nula
+```
+
+## Test de I de Moran global
+```{r}
+moran.test(x=Dificam_log, listw = censo.w.w, na.action = na.omit)
+moran.test(x=Dificam_log, listw = censo.w.b, na.action = na.omit)  #Este nos da el valor mas cercano a 1
+
+# Para los pesos tanto estandarizado como binario, se comprueba que si hay correlación espacial, pues los valores de p fueron menores a 0.05
+```
+
+## Test de I de Moran Local
+
+```{r}
+moran.plot(x=Dificam_log, listw = censo.w.b)
+DificamLoc <- localmoran(Dificam_log, listw = censo.w.b)
+source('/home/lbine/material-de-apoyo/data/lisaclusters.R')
+lisamap(objesp = censoT,
+        var = 'Dificam_log',
+        pesos = censo.w.b,
+        tituloleyenda = 'Significancia\n("x-y", léase\ncomo "x"\nrodeado de "y"', 
+        leyenda = T,
+        anchuratitulo = 1000,
+        tamanotitulo = 16,
+        fuentedatos = 'vivpersgeom',
+        titulomapa = paste0('Clusters LISA de Personas con dificultad para caminar o subir escalones')
+        )
+
+```
+
+```{r}
+st_layers('/home/lbine/material-de-apoyo/data/onamet_prec_anual_sf.gpkg')
+prec <- read.csv('/home/lbine/material-de-apoyo/data/onamet_prec_anual_sf.csv', check.names = F)
+
+st_crs(prec)
+
+en17 <- read.csv('...', check.names = F)
+prov <- st_read(dsn = '...', layer = '...')
+en17 <- en17 %>% mutate(...)
+match(..., ...)
+proven17 <- prov %>% inner_join(...)
+
+```
 
 # Referencias
+#Se utiliza como material de apoyo los scripts practicados durante las sesiones de trabajo en aula con el profesor José Ramón Martínez Batlle, durante el Módulo Análisis Espacial en la Maestría en Teledetección y Ciencias de la Información Geográfica impartiéndose en la UASD (Introducción a R, Simple features y análisis exploratorio de datos espaciales (ESDA), Vecindad, Autocorrelación, Datos puntuales-Geoestadística, Modelización de datos espaciales basados en geometrías poligonales).
