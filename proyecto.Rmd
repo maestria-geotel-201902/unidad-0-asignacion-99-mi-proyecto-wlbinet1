@@ -33,18 +33,32 @@ header-includes:
 
 # Introducción
 
-#Tomando en cuenta los datos del Censo Nacional de poblacion y vivienda del 2010, poder se puede definir cual es la distribución espacial de las personas que tienene dificultad para caminar o subir escalones. 
+#Tomando en cuenta los datos del Censo Nacional de poblacion y vivienda del 2010, se puede definir cual es la distribución espacial de las personas que tienen dificultad para caminar o subir escalones. 
 
 # Metodología
 
+
+#Se utilizo como información de soporte, la base de datos suministrada por el profesor Martinez Batlle. Base de datos estadísticos de la Oficina Nacional de Estadística (ONE),datos de precipitación anual (ONAMET), Censo Nacional de Población y Vivienda 2010. Siguiendo las siguientes secuencias.
+
+#Analisis exploratorio de datos espaciales.
+#Analisis Exploratorio ESDA
+#Analisis de Vecindad
+#Ponderadores espaciales (Construcción de objeto de pesos)
+#Autocorrelacion Espacial
+#Test de I de Moran global
+#Test de I de Moran local
+#Geoestadistica Analisis de Kriging
+#ESDA
+#Despliega la localizacion de los observatorios
+#variograma muestral
+#variograma modelo
+#kriging ordinario
 
 
 # Resultados
 
 
-
-# Discusión o Conclusiones
-
+#Con Lisa clusters, encontramos un hotspot en la zona noroeste, donde existe mayor cantidad de personas con  dificultad para caminar o subir escalones, en la parte suroeste es donde existe menos incidencia. En la Geoestadistica el analisis Kriging evidencia de una manera muy puntual aunque segregada, que la parte nordeste posee  mayor cantidad de precipitacion en República Dominicana en el año 1982.
 
 
 # Información de soporte
@@ -80,7 +94,7 @@ library(gstat)
 # Analisis exploratorio de datos espaciales
 
 ```{r}
-getwd()        # Optención de la ruta de mi directorio de datos
+getwd()        # Obtención de la ruta de mi directorio de datos
 
 #carga en memoria del geopackage de division territorial
 st_layers('/home/lbine/material-de-apoyo/data/divisionRD.gpkg')
@@ -239,22 +253,122 @@ lisamap(objesp = censoT,
         fuentedatos = 'vivpersgeom',
         titulomapa = paste0('Clusters LISA de Personas con dificultad para caminar o subir escalones')
         )
+```
+
+##Geoestadistica Analisis de Kriging
+
+```{r}
+prec <- st_read('onamet_prec_anual_sf.gpkg')
+
+st_crs(prec)
+crswgs84utm <- 32619
+precUtm <- prec %>% st_transform(crs = crswgs84utm)
+```
+
+## ESDA
+```{r esda 1982}
+nrow(precUtm)
+prec82 <- precUtm$`a1982`   # Seleccion de variable
+
+hist(prec82)
+hist(log(prec82))
+shapiro.test(prec82)
+shapiro.test(log(prec82))
+qqnorm(prec82)
+qqnorm(log(prec82))
+
+preci <- na.omit(precUtm[,c('Estación', 'a1982')])
+preci$a1982log <- log(preci$a1982)
+preci
 
 ```
 
 ```{r}
-st_layers('/home/lbine/material-de-apoyo/data/onamet_prec_anual_sf.gpkg')
-prec <- read.csv('/home/lbine/material-de-apoyo/data/onamet_prec_anual_sf.csv', check.names = F)
+st_layers('divisionRD.gpkg')
+muni.sf <- st_read(dsn = 'divisionRD.gpkg', layer = 'MUNCenso2010', quiet=T)
+muni.sf
+```
 
-st_crs(prec)
+# Despliega la localizacion de los observatorios
+```{r}
+library(ggplot2)
 
-en17 <- read.csv('...', check.names = F)
-prov <- st_read(dsn = '...', layer = '...')
-en17 <- en17 %>% mutate(...)
-match(..., ...)
-proven17 <- prov %>% inner_join(...)
+ggplot() +
+  geom_sf(data = muni.sf, fill = 'white') +
+  geom_sf(data = preci, aes(col = a1982log), size = 6) +
+  scale_colour_gradient(low="#deebf7", high="#3182bd") +
+  geom_sf_text(data = muni.sf, aes(label=TOPONIMIA), check_overlap = T, size = 2) +
+  geom_sf_text(data = preci, aes(label=Estación), check_overlap = T, size = 1.5) +
+  theme_bw()
 
 ```
+
+# variograma muestral
+```{r}
+v82 <- variogram(a1982log~1, preci)
+v82
+plot(v82, plot.numbers = T)
+
+```
+# variograma modelo
+```{r}
+v82_m <- fit.variogram(v82, vgm(model = "Sph", range = 50000))
+v82_m
+plot(v82, v82_m, plot.numbers = T)
+
+v82_m2 <- fit.variogram(v82, vgm(model = "Exp", range = 50000))
+v82_m2
+plot(v82, v82_m2, plot.numbers = T)
+
+v82_m3 <- fit.variogram(v82, vgm(model = "Gau", range = 50000))
+v82_m3
+plot(v82, v82_m3, plot.numbers = T)
+
+attr(v82_m, 'SSErr')
+attr(v82_m2, 'SSErr') #Elegimos este
+attr(v82_m3, 'SSErr')
+```
+
+## kriging ordinario
+
+```{r}
+# creacion de cuadricula de 1000
+library(stars)
+grd <- st_bbox(muni.sf) %>%
+  st_as_stars(dx = 1000) %>% #10000 metros=10km de resolución espacial
+  st_set_crs(crswgs84utm ) %>%
+  st_crop(muni.sf)
+grd
+plot(grd)
+
+# interpolacion
+k <- krige(formula = a1982log~1, locations = preci, newdata = grd, model = v82_m2)
+k
+plot(k)
+```
+```
+
+```{r krige-log}
+ggplot() +
+  geom_stars(data = k, aes(fill = var1.pred, x = x, y = y)) + 
+  scale_fill_gradient(low="#deebf7", high="#3182bd") +
+  geom_sf(data = st_cast(muni.sf, "MULTILINESTRING")) +
+  geom_sf(data = preci) +
+  geom_sf_text(data = muni.sf, aes(label=TOPONIMIA), check_overlap = T, size = 2) +
+  theme_bw()
+```
+
+## Para conseguir los valores reales de las precipitaciones
+```{r krige}
+ggplot() +
+  geom_stars(data = exp(k), aes(fill = var1.pred, x = x, y = y)) + 
+  scale_fill_gradient(low="#deebf7", high="#3182bd", trans = 'log10') +
+  geom_sf(data = st_cast(muni.sf, "MULTILINESTRING")) +
+  geom_sf(data = preci) +
+  geom_sf_text(data = muni.sf, aes(label=TOPONIMIA), check_overlap = T, size = 2) +
+  theme_bw()
+```
+
 
 # Referencias
 #Se utiliza como material de apoyo los scripts practicados durante las sesiones de trabajo en aula con el profesor José Ramón Martínez Batlle, durante el Módulo Análisis Espacial en la Maestría en Teledetección y Ciencias de la Información Geográfica impartiéndose en la UASD (Introducción a R, Simple features y análisis exploratorio de datos espaciales (ESDA), Vecindad, Autocorrelación, Datos puntuales-Geoestadística, Modelización de datos espaciales basados en geometrías poligonales).
