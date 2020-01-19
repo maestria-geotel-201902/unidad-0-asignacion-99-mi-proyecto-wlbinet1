@@ -15,7 +15,7 @@ author:
 - name: Wanda Lisselote Binet y Ramon Correa
   affiliation: Estudiante, Universidad Autónoma de Santo Domingo (UASD)
 abstract: "Mi resumen"
-keywords: "Dificultad Caminar, dificultad escalones
+keywords: "Dificultad Caminar, Dificultad subir escalones, precipitaciones
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 geometry: margin=1in
 fontfamily: mathpazo
@@ -33,32 +33,35 @@ header-includes:
 
 # Introducción
 
-#Tomando en cuenta los datos del Censo Nacional de poblacion y vivienda del 2010, se puede definir cual es la distribución espacial de las personas que tienen dificultad para caminar o subir escalones. 
+#Estos procesos de analisis utilizando R, se realizan como trabajo final del módulo de Analisis Espacial de la Maestría en teledetección y Ciencias de la información Geográfica.  Su objetivo especifico es realizar procesos de análisis espacial, tomando en cuenta los datos del Censo Nacional de poblacion y vivienda del 2010, que nos ayuden a definir la distribución espacial de las personas que tienen dificultad para caminar o subir escalones en el pais, localizando los puntos de concentracion de dicha poblacion por municipio.
+#De igual manera, mediante el uso de la interpolación de kriging, se efectúa el análisis de los datos de precipitación obtenidos de la oficina nacional de meteorologia del año 1982 para conocer los municipios del país donde hubo mayor cantidad de lluvia.
+
 
 # Metodología
 
+#Para arribar a los resultados buscados se han seguido una serie de pasos:
+# Para la primera parte (Vecindad y Autocorrelación:
+# 1ro. Cargar las librerias propias de R que nos permitan ejecutar los codigos para el análisis.
+# 2do. Efectuar la carga a memoria de los archivos de datos y espaciales que se utilizarían (División politica municipal, datos estadístico del IX censo nacional del 2010 y de precipitación anual suministrado por la ONAMET).
+# 3ro. Realizar el análisis exploratorio de los datos espaciales (ESDA). Obteniendo informaciones estadísticas básicas, histogramas, y algunas pruebas (como la de shapiro weik) comprobando que la columna de datos a usar tengan una distribución normal. 
+# 4to. Proceder a efectuar los Analisis de Vecindad por contiguidad y por numero de vecinos mas cercanos (1 y 2 vecinos).
+# 5to. Se construyen los ponderadores espaciales u objeto de pesos, tanto el estilo weighted como el binario.
+# 6to. Se inician los procesos para comprobar la Autocorrelacion Espacial, haciendo la prueba de Breuch-Pagan, de homocedasticidad de la variable transformada, el Test de I de Moran global y el Test de I de Moran local, para concluir con la creación del grafo Lisa Cluster que nos dá el resultado de la primera parte del análisis.
 
-#Se utilizo como información de soporte, la base de datos suministrada por el profesor Martinez Batlle. Base de datos estadísticos de la Oficina Nacional de Estadística (ONE),datos de precipitación anual (ONAMET), Censo Nacional de Población y Vivienda 2010. Siguiendo las siguientes secuencias.
-
-#Analisis exploratorio de datos espaciales.
-#Analisis Exploratorio ESDA
-#Analisis de Vecindad
-#Ponderadores espaciales (Construcción de objeto de pesos)
-#Autocorrelacion Espacial
-#Test de I de Moran global
-#Test de I de Moran local
-#Geoestadistica Analisis de Kriging
-#ESDA
-#Despliega la localizacion de los observatorios
-#variograma muestral
-#variograma modelo
-#kriging ordinario
-
-
-# Resultados
+# Para la segunda parte (Kriging):
+# 1ro. Se realizan los primeros tres pasos anteriores para tener acceso y preparar los datos de precipitación a utilizar. Se seleccionó el año 1982 para el análisis.
+# 2do. Se realiza una impresión en pantalla de la localizacion de los observatorios o puntos de muestreo de lluvia.
+# 3ro. Se genera el variograma muestral de nuestra variable logaritmica aceptada.
+# 4to. Para entonces generar los variogramas modelo, tanto esferico como exponencial y de Gau, seleccionando el idoneo para efectuar la interpolación.
+# 5to. Se procede a crear la cuadricula del mapa a generar, a realizar e imprimir el mapa de la interpolacion con el kriging ordinario.
+# 6to. Se genera e imprime el mapa con los municipios y la interpolación. Se ve los valores de la variable logaritmica.
+# 7mo. Se genera e imprime el mapa con los municipios y la interpolación. Se ve los valores reales de precipitación.
 
 
-#Con Lisa clusters, encontramos un hotspot en la zona noroeste, donde existe mayor cantidad de personas con  dificultad para caminar o subir escalones, en la parte suroeste es donde existe menos incidencia. En la Geoestadistica el analisis Kriging evidencia de una manera muy puntual aunque segregada, que la parte nordeste posee  mayor cantidad de precipitacion en República Dominicana en el año 1982.
+# Resultados Obtenidos
+
+# 1- Se obtuvo un mapa LISA, que nos muestra los municipios donde existen la mayor y menor incidencia de casos de personas donde hay dificultad para caminar o subir escaleras. Encontramos un hotspot en la zona noroeste (municipios en rojo), donde existe mayor cantidad de personas con  dificultad para caminar o subir escalones; en la región suroeste y fronteriza es donde existe menos incidencia (municipios en azul); mientras en los demás municipios (en gris), no se evidencia la incidencia de casos.
+# 2 - En la Geoestadistica, el analisis Kriging evidencia de una manera muy puntual aunque segregada, que la parte nordeste posee  mayor cantidad de precipitacion en República Dominicana para el año 1982.
 
 
 # Información de soporte
@@ -67,7 +70,7 @@ header-includes:
 #- Capa de division politica de municipios del Censo Nacional de Población y Vivienda 2010, localizada en el Geopackage divisionRD.gpkg.
 #- Datos de precipitacion anual, localizados en los archivos onamet_prec_anual_sf.
 #- Base de datos estadísticos de la Oficina Nacional de Estadística, localizada en el archivo vivpersgeom_sf .RDS.
-#- Informaciones conceptuales sobre hacinamiento de los Boletines Mensuales llamados Panorama Estadístico de la ONE.  (Boletin mensual Año 1 No. 1 y Boletin mensua Año 5 No. 62)
+
 
 # *Script* reproducible
 
@@ -77,9 +80,11 @@ knitr::opts_chunk$set(
   collapse=TRUE,
   out.width='100%',
   fig.path = "img/",
-  eval = F
+  eval = T
 )
 ```
+
+## Carga de librerias de R a memoria
 
 ```{r}
 library(sf)
@@ -91,7 +96,7 @@ library(tmap)
 library(RColorBrewer)
 library(gstat)
 ```
-# Analisis exploratorio de datos espaciales
+## Carga de los archivos espaciales y de datos a utilizar. Preparación.
 
 ```{r}
 getwd()        # Obtención de la ruta de mi directorio de datos
@@ -110,11 +115,11 @@ censo <- vivpersgeom_sf %>% select(matches('ENLACE|TOPONIMIA|Población total|Co
 
 censo <- censo %>% mutate("Cantviv"=`Condición de ocupación: Ocupada con personas presentes`+ `Condición de ocupación: Desocupada`)
 
-censo <- censo %>% mutate("CHabitacion"=`Cantidad Cuartos tiene la vivienda: 1`+(`Cantidad Cuartos tiene la vivienda: 2`*2)+(`Cantidad Cuartos tiene la vivienda: 3`*3)+(`Cantidad Cuartos tiene la vivienda: 4`*4)+(`Cantidad Cuartos tiene la vivienda: 5`*5)+(`Cantidad Cuartos tiene la vivienda: 6`*6)+(`Cantidad Cuartos tiene la vivienda: 7`*7)+(`Cantidad Cuartos tiene la vivienda: 8`*8)+(`Cantidad Cuartos tiene la vivienda: 9`*9)+(`Cantidad Cuartos tiene la vivienda: 10`*10)+(`Cantidad Cuartos tiene la vivienda: 11`*11)+(`Cantidad Cuartos tiene la vivienda: 12`*12)+(`Cantidad Cuartos tiene la vivienda: 13`*13)+(`Cantidad Cuartos tiene la vivienda: 14`*14)+(`Cantidad Cuartos tiene la vivienda: 15`*15)) %>% select(-matches('Cantidad Cuartos tiene la vivienda'))
+#censo <- censo %>% mutate("CHabitacion"=`Cantidad Cuartos tiene la vivienda: 1`+(`Cantidad Cuartos tiene la vivienda: 2`*2)+(`Cantidad Cuartos tiene la vivienda: 3`*3)+(`Cantidad Cuartos tiene la vivienda: 4`*4)+(`Cantidad Cuartos tiene la vivienda: 5`*5)+(`Cantidad Cuartos tiene la vivienda: 6`*6)+(`Cantidad Cuartos tiene la vivienda: 7`*7)+(`Cantidad Cuartos tiene la vivienda: 8`*8)+(`Cantidad Cuartos tiene la vivienda: 9`*9)+(`Cantidad Cuartos tiene la vivienda: 10`*10)+(`Cantidad Cuartos tiene la vivienda: 11`*11)+(`Cantidad Cuartos tiene la vivienda: 12`*12)+(`Cantidad Cuartos tiene la vivienda: 13`*13)+(`Cantidad Cuartos tiene la vivienda: 14`*14)+(`Cantidad Cuartos tiene la vivienda: 15`*15)) %>% select(-matches('Cantidad Cuartos tiene la vivienda'))
 
-censo <- censo %>% mutate("NivHac"= `Población total`/ CHabitacion)
+#censo <- censo %>% mutate("NivHac"= `Población total`/ CHabitacion)
 
-#Suponiendo que por cada vivienda señalada hay 1 persona con dificultad para caminar o subir escalones
+#Suponiendo que por cada vivienda señalada hay 1 persona con dificultad para caminar o subir escalones. Se calcula el porcentaje de población en esta situación.
 censo <- censo %>% mutate("PorcPersD"= `Dificultad para Caminar o subir escalones: Si`/`Población total` * 100)
 
 censo <- censo %>% mutate("PorcPersD_log"= log(censo$PorcPersD))
@@ -125,8 +130,8 @@ structure(censo)
 censoT = st_transform(censo, crs=32619)  
 
 # Aseguro la relacion entre los archivos con el campo ENLACE y TOPONIMIA
-match(censoT$ENLACE, muni.sfT$ENLACE)
-match(censoT$TOPONIMIA, muni.sfT$TOPONIMIA)
+match(censoT$ENLACE, muni.sf$ENLACE)
+match(censoT$TOPONIMIA, muni.sf$TOPONIMIA)
 ```
 
 ## Analisis Exploratorio ESDA
@@ -141,6 +146,7 @@ shapiro.test(log(Dificam))
 qqnorm(Dificam)
 qqnorm(log(Dificam))
 Dificam_log <- log(Dificam)
+censoT <- censoT %>% mutate("Dificam_log" = log(Dificam))
 ```
 
 ## Analisis de Vecindad
@@ -190,7 +196,6 @@ nb <- poly2nb(censoT)
 summary(nb)
 ```
 
-
 ## Ponderadores espaciales (Construcción de objeto de pesos)
 
 ```{r}
@@ -218,6 +223,7 @@ coordsxy <- censoT %>%
 coordsxy
 censoT <- censoT %>% inner_join(coordsxy)
 ```
+
 
 ```{r}
 # Prueba de homocedasticidad de la variable transformada
@@ -255,7 +261,7 @@ lisamap(objesp = censoT,
         )
 ```
 
-##Geoestadistica Analisis de Kriging
+## Geoestadistica - Analisis de Kriging
 
 ```{r}
 prec <- st_read('onamet_prec_anual_sf.gpkg')
@@ -325,7 +331,7 @@ v82_m3
 plot(v82, v82_m3, plot.numbers = T)
 
 attr(v82_m, 'SSErr')
-attr(v82_m2, 'SSErr') #Elegimos este
+attr(v82_m2, 'SSErr')               #Elegimos el modelo exponencial
 attr(v82_m3, 'SSErr')
 ```
 
@@ -345,7 +351,6 @@ plot(grd)
 k <- krige(formula = a1982log~1, locations = preci, newdata = grd, model = v82_m2)
 k
 plot(k)
-```
 ```
 
 ```{r krige-log}
@@ -372,3 +377,5 @@ ggplot() +
 
 # Referencias
 #Se utiliza como material de apoyo los scripts practicados durante las sesiones de trabajo en aula con el profesor José Ramón Martínez Batlle, durante el Módulo Análisis Espacial en la Maestría en Teledetección y Ciencias de la Información Geográfica impartiéndose en la UASD (Introducción a R, Simple features y análisis exploratorio de datos espaciales (ESDA), Vecindad, Autocorrelación, Datos puntuales-Geoestadística, Modelización de datos espaciales basados en geometrías poligonales).
+
+
