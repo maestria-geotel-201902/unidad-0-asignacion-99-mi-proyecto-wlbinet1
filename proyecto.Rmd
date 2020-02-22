@@ -8,14 +8,13 @@ output:
     template: svm-latex-ms.tex
     number_sections: true
 title: | 
-        | Mi proyecto
-        | Subtítulo
-        | Subtítulo
+        | Análisis de la distribucion territorial en República Dominicana de personas con dificultad para caminar o subir escalones y su relación de dependencia con niveles educativos alcanzados.
+        | Análisis de la region con los mayores niveles de precipitación ocurrida en el año 1982 a partir de datos suministrados por la oficina nacional de meteorologia para la República Dominicana.
 author:
 - name: Wanda Lisselote Binet y Ramon Correa
-  affiliation: Estudiante, Universidad Autónoma de Santo Domingo (UASD)
+  affiliation: Estudiantes de la Maestría en Teledetección y Ciencias de la información Geográfica, Universidad Autónoma de Santo Domingo (UASD) - Módulo de Análisis Espacial
 abstract: "Mi resumen"
-keywords: "Dificultad Caminar, Dificultad subir escalones, precipitaciones
+keywords: "Dificultad Caminar, Dificultad subir escalones, Precipitación, Nivel educativo alcanzado"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 geometry: margin=1in
 fontfamily: mathpazo
@@ -25,51 +24,35 @@ bibliography: bibliography.bib
 # csl: plos-one.csl
 csl: apa.csl
 header-includes:
+  \usepackage{graphicx}
   \usepackage{pdflscape}
   \newcommand{\blandscape}{\begin{landscape}}
   \newcommand{\elandscape}{\end{landscape}}
+editor_options:
+    chunk_output_type: console
 ---
 
-
+    
 # Introducción
+Estos procesos de analisis utilizando R, se realizan como trabajo final del módulo de Analisis Espacial de la Maestría en teledetección y Ciencias de la información Geográfica.  Su objetivo especifico es realizar procesos de análisis espacial, tomando en cuenta los datos del Censo Nacional de poblacion y vivienda del 2010, que nos ayuden a definir la distribución espacial de las personas que tienen dificultad para caminar o subir escalones en el pais, localizando los puntos de concentracion de dicha poblacion por municipio. De igual forma se hará la modelización de la relación entre esta población con los niveles educativos alcanzados.
 
-#Estos procesos de analisis utilizando R, se realizan como trabajo final del módulo de Analisis Espacial de la Maestría en teledetección y Ciencias de la información Geográfica.  Su objetivo especifico es realizar procesos de análisis espacial, tomando en cuenta los datos del Censo Nacional de poblacion y vivienda del 2010, que nos ayuden a definir la distribución espacial de las personas que tienen dificultad para caminar o subir escalones en el pais, localizando los puntos de concentracion de dicha poblacion por municipio.
-#De igual manera, mediante el uso de la interpolación de kriging, se efectúa el análisis de los datos de precipitación obtenidos de la oficina nacional de meteorologia del año 1982 para conocer los municipios del país donde hubo mayor cantidad de lluvia.
-
-
-# Metodología
-
-#Para arribar a los resultados buscados se han seguido una serie de pasos:
-# Para la primera parte (Vecindad y Autocorrelación:
-# 1ro. Cargar las librerias propias de R que nos permitan ejecutar los codigos para el análisis.
-# 2do. Efectuar la carga a memoria de los archivos de datos y espaciales que se utilizarían (División politica municipal, datos estadístico del IX censo nacional del 2010 y de precipitación anual suministrado por la ONAMET).
-# 3ro. Realizar el análisis exploratorio de los datos espaciales (ESDA). Obteniendo informaciones estadísticas básicas, histogramas, y algunas pruebas (como la de shapiro weik) comprobando que la columna de datos a usar tengan una distribución normal. 
-# 4to. Proceder a efectuar los Analisis de Vecindad por contiguidad y por numero de vecinos mas cercanos (1 y 2 vecinos).
-# 5to. Se construyen los ponderadores espaciales u objeto de pesos, tanto el estilo weighted como el binario.
-# 6to. Se inician los procesos para comprobar la Autocorrelacion Espacial, haciendo la prueba de Breuch-Pagan, de homocedasticidad de la variable transformada, el Test de I de Moran global y el Test de I de Moran local, para concluir con la creación del grafo Lisa Cluster que nos dá el resultado de la primera parte del análisis.
-
-# Para la segunda parte (Kriging):
-# 1ro. Se realizan los primeros tres pasos anteriores para tener acceso y preparar los datos de precipitación a utilizar. Se seleccionó el año 1982 para el análisis.
-# 2do. Se realiza una impresión en pantalla de la localizacion de los observatorios o puntos de muestreo de lluvia.
-# 3ro. Se genera el variograma muestral de nuestra variable logaritmica aceptada.
-# 4to. Para entonces generar los variogramas modelo, tanto esferico como exponencial y de Gau, seleccionando el idoneo para efectuar la interpolación.
-# 5to. Se procede a crear la cuadricula del mapa a generar, a realizar e imprimir el mapa de la interpolacion con el kriging ordinario.
-# 6to. Se genera e imprime el mapa con los municipios y la interpolación. Se ve los valores de la variable logaritmica.
-# 7mo. Se genera e imprime el mapa con los municipios y la interpolación. Se ve los valores reales de precipitación.
-
-
-# Resultados Obtenidos
-
-# 1- Se obtuvo un mapa LISA, que nos muestra los municipios donde existen la mayor y menor incidencia de casos de personas donde hay dificultad para caminar o subir escaleras. Encontramos un hotspot en la zona noroeste (municipios en rojo), donde existe mayor cantidad de personas con  dificultad para caminar o subir escalones; en la región suroeste y fronteriza es donde existe menos incidencia (municipios en azul); mientras en los demás municipios (en gris), no se evidencia la incidencia de casos.
-# 2 - En la Geoestadistica, el analisis Kriging evidencia de una manera muy puntual aunque segregada, que la parte nordeste posee  mayor cantidad de precipitacion en República Dominicana para el año 1982.
+De igual manera, mediante el uso de la interpolación de kriging, se efectúa el análisis de los datos de precipitación obtenidos de la oficina nacional de meteorologia del año 1982 para conocer los municipios del país donde se evidencia una mayor cantidad de lluvia durante ese periodo.
 
 
 # Información de soporte
+Se utiliza como información de soporte las bases de datos suministradas por el profesor Martinez Batlle que está localizada en el directorio data:
+* Capa de division politica de municipios del Censo Nacional de Población y Vivienda 2010, localizada en el Geopackage divisionRD.gpkg.
+* Datos de precipitacion anual, localizados en los archivos onamet_prec_anual_sf.
+* Base de datos estadísticos de la Oficina Nacional de Estadística, localizada en el archivo vivpersgeom_sf .RDS.
 
-#Se utiliza como información de soporte las bases de datos suministradas por el profesor Martinez Batlle que está localizada en el directorio data:
-#- Capa de division politica de municipios del Censo Nacional de Población y Vivienda 2010, localizada en el Geopackage divisionRD.gpkg.
-#- Datos de precipitacion anual, localizados en los archivos onamet_prec_anual_sf.
-#- Base de datos estadísticos de la Oficina Nacional de Estadística, localizada en el archivo vivpersgeom_sf .RDS.
+
+# Referencias
+* Se utiliza como material de apoyo los scripts practicados durante las sesiones de trabajo en aula con el profesor José Ramón Martínez Batlle, durante el Módulo Análisis Espacial (Introducción a R, Simple features y análisis exploratorio de datos espaciales (ESDA), Vecindad, Autocorrelación, Datos puntuales-Geoestadística, Modelización de datos espaciales basados en geometrías poligonales).
+* https://desktop.arcgis.com/es/arcmap/latest/tools/spatial-statistics-toolbox/h-how-spatial-autocorrelation-moran-s-i-spatial-st.htm
+* https://medium.com/high-data/el-concepto-de-heterocedasticidad-36cda43bb8f7
+* http://academic.uprm.edu/eacuna/miniman9sl.pdf
+* https://es.wikipedia.org/wiki/Modelo_autorregresivo
+* http://www.cartagena99.com/recursos/alumnos/apuntes/Tema%202%20-%20Regresion%20lineal.pdf
 
 
 # *Script* reproducible
@@ -84,8 +67,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Carga de librerias de R a memoria
-
+# Carga de librerias de R a memoria
 ```{r}
 library(sf)
 library(sp)
@@ -95,38 +77,40 @@ library(lmtest)
 library(tmap)
 library(RColorBrewer)
 library(gstat)
+library(stars)
+source('data/lisaclusters.R')
 ```
-## Carga de los archivos espaciales y de datos a utilizar. Preparación.
 
+# FASE 1 - ANALISIS DE AUTOCORRELACION ESPACIAL
+
+## Metodología
+Para arribar a los resultados buscados primeramente se han cargado en memoria el archivos de datos estadísticos del IX censo nacional del 2010 y el geopackage contentivo de la base espaciales con la división politica municipal. Procediendo posteriormente a realizar un análisis exploratorio de los datos para informaciones estadísticas básicas, histogramas, y pruebas para comprobar la existencia de una distribución normal de los datos.
+
+Confirmado esto, se procede a crear objetos de vecindad por contiguidad y los ponderadores espaciales u objeto de pesos, tanto el estilo weighted como el binario. Para entonces iniciar los procesos para comprobar la autocorrelacion espacial, haciendo la prueba de Breuch-Pagan, de homocedasticidad de la variable transformada (es decir, que la varianza de los errores de la variabe es constante a lo largo del tiempo), el Test I de Moran global (que mide la autocorrelación espacial basada en las ubicaciones) y el Test de I de Moran local (que identifica clusters con valores altos, bajos y tambien valores atipicos espaciales), para concluir con la creación del grafo Lisa Cluster que nos muestra el comportamiento de la variable estudiada: personas que tienen dificultad para caminar o subir escalones en el pais.
+
+
+## Carga de los archivos espaciales y de datos a utilizar.
 ```{r}
-getwd()        # Obtención de la ruta de mi directorio de datos
-
-#carga en memoria del geopackage de division territorial
-st_layers('/home/lbine/material-de-apoyo/data/divisionRD.gpkg')
-muni.sf <- st_read(dsn = '/home/lbine/material-de-apoyo/data/divisionRD.gpkg', layer = 'MUNCenso2010', quiet=T)
+# Carga en memoria del geopackage de division territorial
+st_layers('data/divisionRD.gpkg')
+muni.sf <- st_read(dsn = 'data/divisionRD.gpkg', layer = 'MUNCenso2010', quiet=T)
 muni.sf
 summary(muni.sf)
 plot(muni.sf)
 
-#Carga los datos del censo 2010
-vivpersgeom_sf <- readRDS('/home/lbine/material-de-apoyo/data/vivpersgeom_sf.RDS')
-#censoxx <- vivpersgeom_sf
-censo <- vivpersgeom_sf %>% select(matches('ENLACE|TOPONIMIA|Población total|Condición de ocupación|Cantidad Cuartos tiene la vivienda|Dificultad para Caminar o subir escalones: Si'))
+# Carga los datos del censo 2010
+vivpersgeom_sf <- readRDS('data/vivpersgeom_sf.RDS')
+censo <- vivpersgeom_sf %>% select(matches('ENLACE|TOPONIMIA|Población total|Condición de ocupación|Nivel Educativo|Dificultad para Caminar o subir escalones: Si|Asiste o asistió a la escuela: Nunca asistió'))
 
 censo <- censo %>% mutate("Cantviv"=`Condición de ocupación: Ocupada con personas presentes`+ `Condición de ocupación: Desocupada`)
 
-#censo <- censo %>% mutate("CHabitacion"=`Cantidad Cuartos tiene la vivienda: 1`+(`Cantidad Cuartos tiene la vivienda: 2`*2)+(`Cantidad Cuartos tiene la vivienda: 3`*3)+(`Cantidad Cuartos tiene la vivienda: 4`*4)+(`Cantidad Cuartos tiene la vivienda: 5`*5)+(`Cantidad Cuartos tiene la vivienda: 6`*6)+(`Cantidad Cuartos tiene la vivienda: 7`*7)+(`Cantidad Cuartos tiene la vivienda: 8`*8)+(`Cantidad Cuartos tiene la vivienda: 9`*9)+(`Cantidad Cuartos tiene la vivienda: 10`*10)+(`Cantidad Cuartos tiene la vivienda: 11`*11)+(`Cantidad Cuartos tiene la vivienda: 12`*12)+(`Cantidad Cuartos tiene la vivienda: 13`*13)+(`Cantidad Cuartos tiene la vivienda: 14`*14)+(`Cantidad Cuartos tiene la vivienda: 15`*15)) %>% select(-matches('Cantidad Cuartos tiene la vivienda'))
-
-#censo <- censo %>% mutate("NivHac"= `Población total`/ CHabitacion)
-
-#Suponiendo que por cada vivienda señalada hay 1 persona con dificultad para caminar o subir escalones. Se calcula el porcentaje de población en esta situación.
 censo <- censo %>% mutate("PorcPersD"= `Dificultad para Caminar o subir escalones: Si`/`Población total` * 100)
 
 censo <- censo %>% mutate("PorcPersD_log"= log(censo$PorcPersD))
 
 structure(censo)
 
-# Asegurar se trabaja con el mismo sistema de coordenadas
+# Aseguro se trabaja con el mismo sistema de coordenadas
 censoT = st_transform(censo, crs=32619)  
 
 # Aseguro la relacion entre los archivos con el campo ENLACE y TOPONIMIA
@@ -151,7 +135,6 @@ censoT <- censoT %>% mutate("Dificam_log" = log(Dificam))
 
 ## Analisis de Vecindad
 ```{r}
-
 # Vecindad por Contiguidad: Se crea objeto de vecindad con el criterio donde todos son vecinos
 censoT.sp <- as_Spatial(censoT)
 censoT.np <- poly2nb(censoT.sp, queen = TRUE) 
@@ -175,15 +158,15 @@ censoT.np.k2 <- knn2nb(knearneigh(coords,k=2), row.names = ident)
 
 is.symmetric.nb(censoT.np.k1)
 is.symmetric.nb(censoT.np.k2)
-#resultado: En ambos casos NO es simetrico
 
+# Resultado: En ambos casos NO es simetrico
 plot(censoT.sp, border="red", lwd=1)
 plot(censoT.np.k1, coordinates(censoT.sp), add=T)
 
 plot(censoT.sp, border="red", lwd=1)
 plot(censoT.np.k2, coordinates(censoT.sp), add=T)
 
-#Determinamos la distancia máxima y mínima al vecino mas proximo usando k=1
+# Determinamos la distancia máxima y mínima al vecino mas proximo usando k=1
 dist <- unlist(nbdists(censoT.np.k1, coords))
 summary(dist)
 hist(dist)
@@ -197,9 +180,7 @@ summary(nb)
 ```
 
 ## Ponderadores espaciales (Construcción de objeto de pesos)
-
 ```{r}
-
 # Estilo Weighted. Donde los pesos de las observaciones vecinas suman 1. Estandarización por fila
 censo.w.w <- nb2listw(nb)
 censo.w.w
@@ -211,7 +192,6 @@ censo.w.b
 ```
 
 ## Autocorrelacion Espacial
-
 ```{r}
 # Prueba de Breuch-Pagan
 coordsxy <- censoT %>%
@@ -224,9 +204,8 @@ coordsxy
 censoT <- censoT %>% inner_join(coordsxy)
 ```
 
-
+## Prueba de homocedasticidad de la variable transformada
 ```{r}
-# Prueba de homocedasticidad de la variable transformada
 censoT %>% lm(Dificam_log~ x, .) %>% plot(3)
 censoT %>% lm(Dificam_log~ y, .) %>% plot(3)
 
@@ -240,15 +219,14 @@ censoT %>% lm(Dificam_log~ y, .) %>% bptest()
 moran.test(x=Dificam_log, listw = censo.w.w, na.action = na.omit)
 moran.test(x=Dificam_log, listw = censo.w.b, na.action = na.omit)  #Este nos da el valor mas cercano a 1
 
-# Para los pesos tanto estandarizado como binario, se comprueba que si hay correlación espacial, pues los valores de p fueron menores a 0.05
+# Para los pesos tanto estandarizado como binario, se comprueba que si hay correlación espacial, pues los valores de p fueron menores a 0.05.
 ```
 
 ## Test de I de Moran Local
-
 ```{r}
 moran.plot(x=Dificam_log, listw = censo.w.b)
 DificamLoc <- localmoran(Dificam_log, listw = censo.w.b)
-source('/home/lbine/material-de-apoyo/data/lisaclusters.R')
+source('data/lisaclusters.R')
 lisamap(objesp = censoT,
         var = 'Dificam_log',
         pesos = censo.w.b,
@@ -261,18 +239,25 @@ lisamap(objesp = censoT,
         )
 ```
 
-## Geoestadistica - Analisis de Kriging
+## Resultado Obtenido
+Se obtuvo un mapa LISA - Local Indicator of Spatial Asociation -, que nos muestra los clusters de municipios donde existen la mayor y menor incidencia de casos de personas con dificultad para caminar o subir escaleras. Encontramos un hotspot en la zona noroeste (municipios en rojo), donde existe mayor cantidad de personas con  dificultad para caminar o subir escalones; en la región suroeste y fronteriza es donde existe menos incidencia (municipios en azul); mientras en los demás municipios (en gris), no se evidencia la incidencia de casos.
 
+ 
+# FASE 2 - GEOESTADISTICA / ANALISIS PUNTUAL
+
+## Metodología
+Para efectuar este análisis espacial, se cargará la base espacial de municipios como referencia y el archivo de datos de precipitación de diferentes años suministrado por la ONAMET. Luego de efectuar el análisis exploratorio de los datos espaciales (ESDA), obtener las informaciones estadísticas básicas, histogramas, y efectua pruebas (como la de Shapiro Wilk) para comprobar que los datos del año seleccionado tenga una distribución normal, se generan los variogramas modelo, para seleccionar el idoneo y así efectuar la interpolación (kriging) y establecer visualmente los municipios con mayor precipitación en el país.
+
+## Carga de archivos de datos de precipitaciones. El archivo de municipios esta ya en memoria
 ```{r}
-prec <- st_read('onamet_prec_anual_sf.gpkg')
-
+prec <- st_read('data/onamet_prec_anual_sf.gpkg')
 st_crs(prec)
 crswgs84utm <- 32619
 precUtm <- prec %>% st_transform(crs = crswgs84utm)
 ```
 
 ## ESDA
-```{r esda 1982}
+```{r}
 nrow(precUtm)
 prec82 <- precUtm$`a1982`   # Seleccion de variable
 
@@ -289,13 +274,7 @@ preci
 
 ```
 
-```{r}
-st_layers('divisionRD.gpkg')
-muni.sf <- st_read(dsn = 'divisionRD.gpkg', layer = 'MUNCenso2010', quiet=T)
-muni.sf
-```
-
-# Despliega la localizacion de los observatorios
+## Despliega la localizacion de los observatorios
 ```{r}
 library(ggplot2)
 
@@ -309,14 +288,15 @@ ggplot() +
 
 ```
 
-# variograma muestral
+## variograma muestral
 ```{r}
 v82 <- variogram(a1982log~1, preci)
 v82
 plot(v82, plot.numbers = T)
 
 ```
-# variograma modelo
+
+## variograma modelo
 ```{r}
 v82_m <- fit.variogram(v82, vgm(model = "Sph", range = 50000))
 v82_m
@@ -336,10 +316,8 @@ attr(v82_m3, 'SSErr')
 ```
 
 ## kriging ordinario
-
 ```{r}
 # creacion de cuadricula de 1000
-library(stars)
 grd <- st_bbox(muni.sf) %>%
   st_as_stars(dx = 1000) %>% #10000 metros=10km de resolución espacial
   st_set_crs(crswgs84utm ) %>%
@@ -353,7 +331,7 @@ k
 plot(k)
 ```
 
-```{r krige-log}
+```{r}
 ggplot() +
   geom_stars(data = k, aes(fill = var1.pred, x = x, y = y)) + 
   scale_fill_gradient(low="#deebf7", high="#3182bd") +
@@ -364,7 +342,7 @@ ggplot() +
 ```
 
 ## Para conseguir los valores reales de las precipitaciones
-```{r krige}
+```{r}
 ggplot() +
   geom_stars(data = exp(k), aes(fill = var1.pred, x = x, y = y)) + 
   scale_fill_gradient(low="#deebf7", high="#3182bd", trans = 'log10') +
@@ -374,8 +352,62 @@ ggplot() +
   theme_bw()
 ```
 
+## Resultado obtenido del Análisis de precipitaciones
+El analisis Kriging ordinario evidencia de una manera muy puntual aunque segregada, que los municipios localizados en la region nordeste del país, recibieron una mayor cantidad de precipitaciones para el periodo correspondiente al año 1982.
 
-# Referencias
-#Se utiliza como material de apoyo los scripts practicados durante las sesiones de trabajo en aula con el profesor José Ramón Martínez Batlle, durante el Módulo Análisis Espacial en la Maestría en Teledetección y Ciencias de la Información Geográfica impartiéndose en la UASD (Introducción a R, Simple features y análisis exploratorio de datos espaciales (ESDA), Vecindad, Autocorrelación, Datos puntuales-Geoestadística, Modelización de datos espaciales basados en geometrías poligonales).
 
+# FASE 3 - MODELIZACIÓN
 
+## Metodología
+Acá se determinará la relación existente entre la variable que señala a las personas que tienen dificultad para caminar o subir escalones en el pais y las de nivel educativo más alto al que asistió.
+Para esto se cargan las variables a relacionar de la base de datos del censo. Se calculan los valores porcentuales con respecto a la población total del país para 2010 y su valores logaritmicos. Y a partir de estos valores, se construye el modelo lineal y el modelo espacial autorregresivo.
+
+## Cargado de los datos
+```{r}
+varsel <- censoT %>% dplyr::select(
+  Toponimia = TOPONIMIA,
+  PoblTotal = "Población total",
+  PersDif = "Dificultad para Caminar o subir escalones: Si",
+  Noasistio =  "Asiste o asistió a la escuela: Nunca asistió",
+  Preprimaria = "Nivel educativo más alto al que asistió: Preprimaria",
+  Primaria = "Nivel educativo más alto al que asistió: Primaria o básica",
+  Secundaria = "Nivel educativo más alto al que asistió: Secundaria o media",
+  Universidad = "Nivel educativo más alto al que asistió: Universitaria o superior")
+varsel
+```
+
+## Relativización de los datos con el campo del total de Población. Se genera las columnas de porcentaje de los datos y al mismo tiempo los logaritmos de los porcentajes encontrados.
+```{r}
+varsellog <- varsel %>% mutate_each(
+  funs(PCT=round(./PoblTotal,4)*100,
+       PCTLOG=log1p(round(./PoblTotal,4)*100)),
+  -1, -2, -geom, -PoblTotal)
+varsellog
+```
+
+Ya habiamos evaluado la autocorrelación, la normalidad y la homocedasticidad de nuestra variable dependiente "Personas con dificultad para caminar o subir escalones" en la primera fase de este análisis.
+
+## Construcción de un modelo lineal
+```{r}
+modlin <- varsellog %>% select(contains('_PCTLOG')) %>%
+  st_drop_geometry() %>% lm(PersDif_PCTLOG ~ ., .) 
+modlin %>% summary
+modlin %>% bptest
+```
+
+## Construcción del modelo espacial autorregresivo
+```{r, warning=FALSE, message=FALSE}
+sar <- varsellog %>% select(contains('_PCTLOG')) %>%
+  st_drop_geometry() %>%
+  spautolm(formula = PersDif_PCTLOG ~ ., data = ., listw = censo.w.w)
+summary(sar)
+
+sar2 <- varsellog %>% select(contains('_PCTLOG')) %>%
+  st_drop_geometry() %>%
+  spautolm(formula = PersDif_PCTLOG ~ Noasistio_PCTLOG + Primaria_PCTLOG + Universidad_PCTLOG, data = ., listw = censo.w.w)
+summary(sar2)
+```
+
+## Resultados obtenidos
+Las variables significativas encontradas al realizar el modelo de regresión lineal son: El nunca asistió a la escuela (Noasistió), y los niveles educativos de Primaria y Universitaria.  Dado que obtuvimos un valor de p mayor a 0.05, concluimos que no se cumple la propiedad de homocedasticidad. Presenta heterocedasticidad.
+El coeficiente de regresión de la variable dependiente en el modelo autorregresivo es negativo, lo que indica una relación inversa.
